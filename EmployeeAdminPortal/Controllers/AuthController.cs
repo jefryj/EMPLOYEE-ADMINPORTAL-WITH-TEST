@@ -17,27 +17,33 @@ namespace EmployeeAdminPortal.Controllers
     {
         private readonly ApplicationDbContext dbContext;
         private readonly IConfiguration configuration;
+        private readonly ILogger<AuthController> logger;
 
-        public AuthController(ApplicationDbContext dbContext,IConfiguration configuration)
+        public AuthController(ApplicationDbContext dbContext, IConfiguration configuration, ILogger<AuthController> logger)
         {
             this.dbContext = dbContext;
             this.configuration = configuration;
+            this.logger = logger;
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto request)
         {
+            logger.LogInformation("Login attempt for email {Email}", request.Email);
             var employee = await dbContext.Employees.FirstOrDefaultAsync(e => e.Email == request.Email);
             if (employee == null)
             {
-                return BadRequest("Invalid email or password");
+                logger.LogWarning("Login failed because employee email {Email} was not found", request.Email);
+                return Unauthorized("Invalid email or password");
             }
             var passwordVerificationResult = new PasswordHasher<Employee>().VerifyHashedPassword(employee, employee.PasswordHash, request.Password);
             if (passwordVerificationResult == PasswordVerificationResult.Failed)
             {
-                return BadRequest("Invalid email or password");
+                logger.LogWarning("Login failed because of an invalid password for email {Email}", request.Email);
+                return Unauthorized("Invalid email or password");
             }
 
             var token = CreateToken(employee);
+            logger.LogInformation("Login succeeded for employee {EmployeeId}", employee.Id);
             return Ok(token);
         }
         private string CreateToken(Employee employee)

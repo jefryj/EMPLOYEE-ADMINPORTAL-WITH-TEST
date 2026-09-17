@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System.Security.Claims;
 
 namespace EmployeeAdminPortal.Tests.Controllers;
@@ -24,7 +26,9 @@ public class ProjectsControllerTests
     {
         var cache = new MemoryCache(new MemoryCacheOptions());
 
-        return new ProjectsController(dbContext,cache);
+        var logger = Mock.Of<ILogger<ProjectsController>>();
+
+        return new ProjectsController(dbContext, cache, logger);
     }
 
     [Fact]

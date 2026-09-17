@@ -97,8 +97,7 @@ namespace EmployeeAdminPortal.Controllers
 
                 if (project == null)
                 {
-                    logger.LogWarning(
-                        "Invalid ProjectId: {ProjectId}",addemp.ProjectId);
+                    logger.LogWarning("Invalid ProjectId: {ProjectId}",addemp.ProjectId);
 
                     return BadRequest("Invalid ProjectId.");
                 }
@@ -252,8 +251,7 @@ namespace EmployeeAdminPortal.Controllers
             }
             if (employee.ProjectId != null)
             {
-                var project =
-                    await dBcontext.Projects.FindAsync(employee.ProjectId);
+                var project = await dBcontext.Projects.FindAsync(employee.ProjectId);
 
                 if (project != null)
                 {

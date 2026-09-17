@@ -5,6 +5,8 @@ using EmployeeAdminPortal.Models.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 
@@ -17,6 +19,15 @@ public class DepartmentsControllerTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
         return new ApplicationDbContext(options);
+    }
+
+    private DepartmentsController GetController(ApplicationDbContext dbContext)
+    {
+        var cache = new MemoryCache(new MemoryCacheOptions());
+
+        var logger = Mock.Of<ILogger<DepartmentsController>>();
+
+        return new DepartmentsController(dbContext, cache, logger);
     }
 
     [Fact]
@@ -33,9 +44,7 @@ public class DepartmentsControllerTests
 
         await dbContext.SaveChangesAsync();
 
-        var cache = new MemoryCache(new MemoryCacheOptions());
-
-        var controller = new DepartmentsController(dbContext, cache);
+        var controller = GetController(dbContext);
         
         var result = await controller.GetDepartmentById(1);
 
@@ -51,9 +60,7 @@ public class DepartmentsControllerTests
     public async Task GetDepartmentById_ThrowsException_WhenDepartmentNotFound()
     {
         var dbContext = GetDbContext();
-        var cache = new MemoryCache(new MemoryCacheOptions());
-
-        var controller = new DepartmentsController(dbContext, cache);
+        var controller = GetController(dbContext);
 
         await Assert.ThrowsAsync<KeyNotFoundException>(
             () => controller.GetDepartmentById(999));
@@ -79,9 +86,7 @@ public class DepartmentsControllerTests
 
         await dbContext.SaveChangesAsync();
 
-        var cache = new MemoryCache(new MemoryCacheOptions());
-
-        var controller = new DepartmentsController(dbContext, cache);
+        var controller = GetController(dbContext);
 
         var searchDto = new DepartmentSearchDto
         {
@@ -105,9 +110,7 @@ public async Task AddDepartment_CreatesDepartment()
 {
     var dbContext = GetDbContext();
 
-    var cache = new MemoryCache(new MemoryCacheOptions());
-
-    var controller = new DepartmentsController(dbContext,cache);
+    var controller = GetController(dbContext);
 
     var user = new ClaimsPrincipal(
         new ClaimsIdentity(
@@ -152,9 +155,7 @@ public async Task AddDepartment_ThrowsException_WhenDepartmentAlreadyExists()
 
     await dbContext.SaveChangesAsync();
 
-    var cache = new MemoryCache(new MemoryCacheOptions());
-
-    var controller = new DepartmentsController(dbContext, cache);
+    var controller = GetController(dbContext);
 
     var dto = new DepartmentDto
     {
@@ -178,9 +179,7 @@ public async Task UpdateDepartment_UpdatesDepartment()
 
     await dbContext.SaveChangesAsync();
 
-    var cache = new MemoryCache(new MemoryCacheOptions());
-
-    var controller = new DepartmentsController(dbContext, cache);
+    var controller = GetController(dbContext);
 
     var user = new ClaimsPrincipal(
     new ClaimsIdentity(
@@ -218,9 +217,7 @@ public async Task UpdateDepartment_ThrowsException_WhenDepartmentNotFound()
 {
     var dbContext = GetDbContext();
 
-    var cache = new MemoryCache(new MemoryCacheOptions());
-
-    var controller = new DepartmentsController(dbContext, cache);
+    var controller = GetController(dbContext);
 
     var dto = new DepartmentDto
     {
@@ -250,9 +247,7 @@ public async Task UpdateDepartment_ThrowsException_WhenDepartmentNotFound()
 
     await dbContext.SaveChangesAsync();
 
-    var cache = new MemoryCache(new MemoryCacheOptions());
-
-    var controller = new DepartmentsController(dbContext, cache);
+    var controller = GetController(dbContext);
 
     var dto = new DepartmentDto
     {
@@ -276,9 +271,7 @@ public async Task DeleteDepartment_RemovesDepartment()
 
     await dbContext.SaveChangesAsync();
 
-    var cache = new MemoryCache(new MemoryCacheOptions());
-
-    var controller = new DepartmentsController(dbContext, cache);
+    var controller = GetController(dbContext);
 
     var user = new ClaimsPrincipal(
     new ClaimsIdentity(
@@ -310,9 +303,7 @@ public async Task DeleteDepartment_ThrowsException_WhenDepartmentNotFound()
     {
     var dbContext = GetDbContext();
 
-    var cache = new MemoryCache(new MemoryCacheOptions());
-
-    var controller = new DepartmentsController(dbContext, cache);
+    var controller = GetController(dbContext);
 
     await Assert.ThrowsAsync<KeyNotFoundException>(
     () => controller.DeleteDepartment(999));
