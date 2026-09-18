@@ -145,20 +145,14 @@ public class EmployeesControllerTests
             new ClaimsIdentity(
                 new[]
                 {
-                    new Claim(
-                        ClaimTypes.Email,
-                        "admin@test.com")
+                    new Claim(ClaimTypes.Email,"admin@test.com")
                 },
                 "TestAuth"));
 
         controller.ControllerContext =
             new ControllerContext
             {
-                HttpContext =
-                    new DefaultHttpContext
-                    {
-                        User = user
-                    }
+                HttpContext =new DefaultHttpContext{User = user}
             };
 
         var dto = new AddEmployeeDto
@@ -218,10 +212,7 @@ public async Task UpdateEmployee_UpdatesEmployee()
 
     controller.ControllerContext = new ControllerContext
     {
-        HttpContext = new DefaultHttpContext
-        {
-            User = user
-        }
+        HttpContext = new DefaultHttpContext{User = user}
     };
 
     var dto = new UpdateEmployeeDto
@@ -275,64 +266,196 @@ public async Task UpdateEmployee_UpdatesEmployee()
     }
 
 
-[Fact]
-public async Task DeleteEmployee_RemovesEmployee()
-{
-var dbContext = GetDbContext();
+    [Fact]
+    public async Task DeleteEmployee_RemovesEmployee()
+    {
+        var dbContext = GetDbContext();
 
-dbContext.Departments.Add(new Department
-{
-Id = 1,
-DepartmentName = "IT"
-});
+        dbContext.Departments.Add(new Department
+    {
+        Id = 1,
+        DepartmentName = "IT"
+    });
 
-var employeeId = Guid.NewGuid();
+    var employeeId = Guid.NewGuid();
 
-dbContext.Employees.Add(new Employee
-{
-Id = employeeId,
-Name = "Jefry",
-Email = "jefry@test.com",
-DepartmentId = 1
-});
+    dbContext.Employees.Add(new Employee
+    {
+        Id = employeeId,
+        Name = "Jefry",
+        Email = "jefry@test.com",
+        DepartmentId = 1
+    });
 
-await dbContext.SaveChangesAsync();
+    await dbContext.SaveChangesAsync();
 
-var controller = GetController(dbContext);
+    var controller = GetController(dbContext);
 
-var user = new ClaimsPrincipal(
-new ClaimsIdentity(
-new[]
-{
-new Claim(ClaimTypes.Email,"admin@test.com")
-},
-"TestAuth"));
+    var user = new ClaimsPrincipal(
+    new ClaimsIdentity(
+    new[]
+    {
+    new Claim(ClaimTypes.Email,"admin@test.com")
+    },
+    "TestAuth"));
 
-controller.ControllerContext = new ControllerContext
-{
-HttpContext = new DefaultHttpContext
-{
-User = user
-}
-};
+    controller.ControllerContext = new ControllerContext
+    {
+        HttpContext = new DefaultHttpContext
+    {
+        User = user
+    }
+    };
 
-var result = await controller.DeleteEmployee(employeeId);
+    var result = await controller.DeleteEmployee(employeeId);
 
-Assert.IsType<NoContentResult>(result);
+    Assert.IsType<NoContentResult>(result);
 
-Assert.Empty(dbContext.Employees);
+    Assert.Empty(dbContext.Employees);
 
-Assert.Single(dbContext.AuditLogs);
-}
+    Assert.Single(dbContext.AuditLogs);
+    }
 
-[Fact]
-public async Task DeleteEmployee_ThrowsException_WhenEmployeeNotFound()
-{
-var dbContext = GetDbContext();
+    [Fact]
+    public async Task DeleteEmployee_ThrowsException_WhenEmployeeNotFound()
+    {
+        var dbContext = GetDbContext();
 
-var controller = GetController(dbContext);
+        var controller = GetController(dbContext);
 
-await Assert.ThrowsAsync<KeyNotFoundException>(
-() => controller.DeleteEmployee(Guid.NewGuid()));
-}
-}
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => controller.DeleteEmployee(Guid.NewGuid()));
+        }
+    [Fact]
+    public async Task ChangePassword_ChangesPasswordSuccessfully()
+    {
+        var dbContext = GetDbContext();
+
+        var employee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            Name = "Jefry",
+            Email = "jefry@test.com",
+            Role = "Employee"
+        };
+
+        var hasher = new PasswordHasher<Employee>();
+        employee.PasswordHash =hasher.HashPassword(employee, "OldPassword123");
+
+        dbContext.Employees.Add(employee);
+        await dbContext.SaveChangesAsync();
+
+        var controller = GetController(dbContext);
+
+        var user = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[]
+                {
+                    new Claim(ClaimTypes.Email, "jefry@test.com")
+                },
+                "TestAuth"));
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = user
+            }
+        };
+
+        var dto = new ChangePasswordDto
+        {
+            CurrentPassword = "OldPassword123",
+            NewPassword = "NewPassword123"
+        };
+
+        var result = await controller.ChangePassword(dto);
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+
+        Assert.Equal("Password changed successfully.",okResult.Value);
+    }
+    [Fact]
+    public async Task ChangePassword_ReturnsBadRequest_WhenCurrentPasswordIsWrong()
+    {
+        var dbContext = GetDbContext();
+
+        var employee = new Employee
+        {
+            Id = Guid.NewGuid(),
+            Name = "Jefry",
+            Email = "jefry@test.com"
+        };
+
+        var hasher = new PasswordHasher<Employee>();
+        employee.PasswordHash =hasher.HashPassword(employee, "OldPassword123");
+
+        dbContext.Employees.Add(employee);
+        await dbContext.SaveChangesAsync();
+
+        var controller = GetController(dbContext);
+
+        var user = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[]
+                {
+                    new Claim(ClaimTypes.Email, "jefry@test.com")
+                },
+                "TestAuth"));
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = user
+            }
+        };
+
+        var dto = new ChangePasswordDto
+        {
+            CurrentPassword = "WrongPassword",
+            NewPassword = "NewPassword123"
+        };
+
+        var result = await controller.ChangePassword(dto);
+
+        var badRequest =Assert.IsType<BadRequestObjectResult>(result);
+
+        Assert.Equal("Current password is incorrect.",badRequest.Value);
+    }
+    [Fact]
+    public async Task ChangePassword_ReturnsNotFound_WhenEmployeeDoesNotExist()
+    {
+        var dbContext = GetDbContext();
+
+        var controller = GetController(dbContext);
+
+        var user = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[]
+                {
+                    new Claim(ClaimTypes.Email, "missing@test.com")
+                },
+                "TestAuth"));
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = user
+            }
+        };
+
+        var dto = new ChangePasswordDto
+        {
+            CurrentPassword = "OldPassword123",
+            NewPassword = "NewPassword123"
+        };
+
+        var result = await controller.ChangePassword(dto);
+
+        var notFound =Assert.IsType<NotFoundObjectResult>(result);
+
+        Assert.Equal("Employee not found",notFound.Value);
+    }
+    }

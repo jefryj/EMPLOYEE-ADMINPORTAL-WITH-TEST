@@ -273,5 +273,35 @@ namespace EmployeeAdminPortal.Controllers
             logger.LogInformation("Employee with Id: {Id} deleted successfully", id);
             return NoContent();
         }
+        [Authorize(Roles = "Employee")]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto request)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+
+            var employee = await dBcontext.Employees.FirstOrDefaultAsync(e => e.Email == email);
+
+            if (employee == null)
+            {
+                return NotFound("Employee not found");
+            }
+
+            var hasher = new PasswordHasher<Employee>();
+
+            var verifyResult = hasher.VerifyHashedPassword(employee,employee.PasswordHash,request.CurrentPassword);
+
+            if (verifyResult == PasswordVerificationResult.Failed)
+            {
+                return BadRequest("Current password is incorrect.");
+            }
+
+            employee.PasswordHash = hasher.HashPassword(employee, request.NewPassword);
+
+            await dBcontext.SaveChangesAsync();
+
+            logger.LogInformation("Password changed successfully for Employee Id: {Id}",employee.Id);
+
+            return Ok("Password changed successfully.");
+        }
     }
 }
