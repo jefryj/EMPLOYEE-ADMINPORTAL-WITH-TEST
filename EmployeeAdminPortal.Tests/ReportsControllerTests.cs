@@ -13,9 +13,7 @@ public class ReportsControllerTests
 {
     private ApplicationDbContext GetDbContext()
     {
-        var options =
-            new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+        var options =new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
 
         return new ApplicationDbContext(options);
@@ -23,16 +21,11 @@ public class ReportsControllerTests
 
     private ReportsController GetController(ApplicationDbContext dbContext)
     {
-        var logger =
-            Mock.Of<ILogger<ReportsController>>();
+        var logger =Mock.Of<ILogger<ReportsController>>();
 
-        var cache =
-            new MemoryCache(new MemoryCacheOptions());
+        var cache =new MemoryCache(new MemoryCacheOptions());
 
-        return new ReportsController(
-            dbContext,
-            logger,
-            cache);
+        return new ReportsController(dbContext,logger,cache);
     }
 
     [Fact]
@@ -70,32 +63,21 @@ public class ReportsControllerTests
 
         var result = await controller.GetDepartmentSummary();
 
-        var okResult =
-            Assert.IsType<OkObjectResult>(result);
+        var okResult =Assert.IsType<OkObjectResult>(result);
 
-        var report =
-            Assert.IsAssignableFrom<IEnumerable<object>>(
-                okResult.Value);
+        var report =Assert.IsAssignableFrom<IEnumerable<object>>(okResult.Value);
 
         var item = report.First();
 
-        Assert.Equal(
-            "IT",
-            item.GetType()
-                .GetProperty("DepartmentName")!
-                .GetValue(item));
+        Assert.Equal("IT",item.GetType().GetProperty("DepartmentName")!.GetValue(item));
 
-        Assert.Equal(
-            2,
-            item.GetType()
-                .GetProperty("EmployeeCount")!
-                .GetValue(item));
+        Assert.Equal(2,item.GetType().GetProperty("EmployeeCount")!.GetValue(item));
 
-        Assert.Equal(
-            55000m,
-            item.GetType()
-                .GetProperty("AverageSalary")!
-                .GetValue(item));
+        Assert.Equal(55000m,item.GetType().GetProperty("AverageSalary")!.GetValue(item));
+
+        Assert.Equal(50000m,item.GetType().GetProperty("MinSalary")!.GetValue(item));
+
+        Assert.Equal(60000m,item.GetType().GetProperty("MaxSalary")!.GetValue(item));
     }
 
     [Fact]
@@ -134,32 +116,21 @@ public class ReportsControllerTests
 
         var result = await controller.GetProjectSummary();
 
-        var okResult =
-            Assert.IsType<OkObjectResult>(result);
+        var okResult =Assert.IsType<OkObjectResult>(result);
 
-        var report =
-            Assert.IsAssignableFrom<IEnumerable<object>>(
-                okResult.Value);
+        var report = Assert.IsAssignableFrom<IEnumerable<object>>(okResult.Value);
 
         var item = report.First();
 
-        Assert.Equal(
-            "Employee Portal",
-            item.GetType()
-                .GetProperty("ProjectName")!
-                .GetValue(item));
+        Assert.Equal("Employee Portal",item.GetType().GetProperty("ProjectName")!.GetValue(item));
 
-        Assert.Equal(
-            2,
-            item.GetType()
-                .GetProperty("EmployeeCount")!
-                .GetValue(item));
+        Assert.Equal(2,item.GetType().GetProperty("ProjectMembersCount")!.GetValue(item));
 
-        Assert.Equal(
-            60000m,
-            item.GetType()
-                .GetProperty("AverageSalary")!
-                .GetValue(item));
+        Assert.Equal(60000m,item.GetType().GetProperty("AverageSalary")!.GetValue(item));
+
+        Assert.Equal(50000m,item.GetType().GetProperty("MinSalary")!.GetValue(item));
+
+        Assert.Equal(70000m,item.GetType().GetProperty("MaxSalary")!.GetValue(item));
     }
 
     [Fact]
@@ -179,25 +150,18 @@ public class ReportsControllerTests
 
         var result = await controller.GetDepartmentSummary();
 
-        var okResult =
-            Assert.IsType<OkObjectResult>(result);
+        var okResult =Assert.IsType<OkObjectResult>(result);
 
-        var report =
-            Assert.IsAssignableFrom<IEnumerable<object>>(
-                okResult.Value);
+        var report =Assert.IsAssignableFrom<IEnumerable<object>>(okResult.Value);
 
         var item = report.First();
 
-        Assert.Equal(
-            0,
-            item.GetType()
-                .GetProperty("EmployeeCount")!
-                .GetValue(item));
+        Assert.Equal(0,item.GetType().GetProperty("EmployeeCount")!.GetValue(item));
 
-        Assert.Equal(
-            0m,
-            item.GetType()
-                .GetProperty("AverageSalary")!
-                .GetValue(item));
+        Assert.Equal(0m,item.GetType().GetProperty("AverageSalary")!.GetValue(item));
+
+        Assert.Equal(0m,item.GetType().GetProperty("MinSalary")!.GetValue(item));
+
+        Assert.Equal(0m,item.GetType().GetProperty("MaxSalary")!.GetValue(item));
     }
 }

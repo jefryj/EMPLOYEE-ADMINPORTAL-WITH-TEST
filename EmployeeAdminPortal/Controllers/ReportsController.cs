@@ -33,13 +33,18 @@ namespace EmployeeAdminPortal.Controllers
         {
             logger.LogInformation("Department Summary CACHE MISS");
 
-            report = await dBcontext.Departments
-                .Select(d => new
-                {
-                    d.DepartmentName,
-                    EmployeeCount = dBcontext.Employees.Count(e => e.DepartmentId == d.Id),
-                    AverageSalary = dBcontext.Employees.Where(e => e.DepartmentId == d.Id).Average(e => (decimal?)e.Salary) ?? 0
-                }).ToListAsync();
+            report = await dBcontext.Departments.Select(d => new
+    {
+        d.DepartmentName,
+        EmployeeCount = dBcontext.Employees.Count(e => e.DepartmentId == d.Id),
+
+        AverageSalary = dBcontext.Employees.Where(e => e.DepartmentId == d.Id).Average(e => (decimal?)e.Salary) ?? 0,
+
+        MinSalary = dBcontext.Employees.Where(e => e.DepartmentId == d.Id).Min(e => (decimal?)e.Salary) ?? 0,
+
+        MaxSalary = dBcontext.Employees.Where(e => e.DepartmentId == d.Id).Max(e => (decimal?)e.Salary) ?? 0
+    })
+    .ToListAsync();
 
             cache.Set(cacheKey, report, TimeSpan.FromMinutes(5));
         }
@@ -62,13 +67,16 @@ namespace EmployeeAdminPortal.Controllers
         {
             logger.LogInformation("Project Summary CACHE MISS");
 
-            report = await dBcontext.Projects
-                .Select(p => new
-                {
-                    p.ProjectName,
-                    EmployeeCount = dBcontext.Employees.Count(e => e.ProjectId == p.Id),
-                    AverageSalary = dBcontext.Employees.Where(e => e.ProjectId == p.Id).Average(e => (decimal?)e.Salary) ?? 0
-                }).ToListAsync();
+            report = await dBcontext.Projects.Select(p => new
+            {
+                p.ProjectName,
+                p.ProjectMembersCount,
+                AverageSalary = dBcontext.Employees.Where(e => e.ProjectId == p.Id).Average(e => (decimal?)e.Salary) ?? 0,
+
+                MinSalary = dBcontext.Employees.Where(e => e.ProjectId == p.Id).Min(e => (decimal?)e.Salary) ?? 0,
+
+                MaxSalary = dBcontext.Employees.Where(e => e.ProjectId == p.Id).Max(e => (decimal?)e.Salary) ?? 0
+            }).ToListAsync();
 
             cache.Set(cacheKey, report, TimeSpan.FromMinutes(5));
         }
