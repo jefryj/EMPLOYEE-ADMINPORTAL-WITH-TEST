@@ -175,7 +175,68 @@ public class EmployeesControllerTests
 
         Assert.Single(dbContext.AuditLogs);
     }
+
 [Fact]
+public async Task AddEmployee_ReturnsBadRequest_WhenEmailAlreadyExists()
+{
+    var dbContext = GetDbContext();
+
+    await dbContext.Departments.AddAsync(
+        new Department
+        {
+            Id = 1,
+            DepartmentName = "IT"
+        });
+
+    await dbContext.Employees.AddAsync(
+        new Employee
+        {
+            Id = Guid.NewGuid(),
+            Name = "Existing User",
+            Email = "jefry@test.com",
+            DepartmentId = 1
+        });
+
+    await dbContext.SaveChangesAsync();
+
+    var controller = GetController(dbContext);
+
+    var user = new ClaimsPrincipal(
+        new ClaimsIdentity(
+            new[]
+            {
+                new Claim(ClaimTypes.Email, "admin@test.com")
+            },
+            "TestAuth"));
+
+    controller.ControllerContext = new ControllerContext
+    {
+        HttpContext = new DefaultHttpContext
+        {
+            User = user
+        }
+    };
+
+    var dto = new AddEmployeeDto
+    {
+        Name = "New User",
+        Email = "jefry@test.com",
+        Phone = "1234567890",
+        Salary = 50000,
+        DepartmentId = 1,
+        Password = "Password@123",
+        Role = "Employee"
+    };
+
+    var result = await controller.AddEmployee(dto);
+
+    var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+
+    Assert.Equal("An employee with this email already exists.",badRequest.Value);
+}
+
+[Fact]
+
 public async Task UpdateEmployee_UpdatesEmployee()
 {
     var dbContext = GetDbContext();

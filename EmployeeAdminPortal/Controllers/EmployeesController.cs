@@ -91,6 +91,12 @@ namespace EmployeeAdminPortal.Controllers
                 return BadRequest("Invalid department ID.");
             }
             logger.LogInformation("Adding a new employee with Name: {Name}, Email: {Email}", addemp.Name, addemp.Email);
+            bool emailExists = await dBcontext.Employees.AnyAsync(e => e.Email == addemp.Email);
+            if (emailExists)
+            {
+                logger.LogWarning("Employee creation failed. Email already exists: {Email}", addemp.Email);
+                return BadRequest("An employee with this email already exists.");
+            }
             if (addemp.ProjectId != null)
             {
                 var project = await dBcontext.Projects.FindAsync(addemp.ProjectId);
