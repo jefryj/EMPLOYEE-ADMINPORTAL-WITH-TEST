@@ -134,8 +134,7 @@ public async Task AddDepartment_CreatesDepartment()
     };
 
     
-    var result =
-        await controller.AddDepartment(dto);
+    var result = await controller.AddDepartment(dto);
 
     var createdResult = Assert.IsType<CreatedAtActionResult>(result);
 

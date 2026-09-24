@@ -15,9 +15,7 @@ public class AuthControllerTests
 {
     private ApplicationDbContext GetDbContext()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
 
         return new ApplicationDbContext(options);
     }
