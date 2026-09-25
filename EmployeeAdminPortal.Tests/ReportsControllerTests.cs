@@ -1,9 +1,7 @@
 using EmployeeAdminPortal.Controllers;
-using EmployeeAdminPortal.Data;
-using EmployeeAdminPortal.Models.Entities;
+using EmployeeAdminPortal.Repositories.Interfaces;
+using EmployeeAdminPortal.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -11,157 +9,68 @@ namespace EmployeeAdminPortal.Tests.Controllers;
 
 public class ReportsControllerTests
 {
-    private ApplicationDbContext GetDbContext()
-    {
-        var options =new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .Options;
-
-        return new ApplicationDbContext(options);
-    }
-
-    private ReportsController GetController(ApplicationDbContext dbContext)
-    {
-        var logger =Mock.Of<ILogger<ReportsController>>();
-
-        var cache =new MemoryCache(new MemoryCacheOptions());
-
-        return new ReportsController(dbContext,logger,cache);
-    }
-
     [Fact]
     public async Task GetDepartmentSummary_ReturnsDepartmentSummary()
     {
-        var dbContext = GetDbContext();
+        var service = new Mock<IReportService>();
+        service.Setup(s => s.GetDepartmentSummaryAsync()).ReturnsAsync([
+            new DepartmentSummaryItem("IT", 2, 55000m, 50000m, 60000m)
+        ]);
 
-        await dbContext.Departments.AddAsync(new Department
-        {
-            Id = 1,
-            DepartmentName = "IT"
-        });
-
-        await dbContext.Employees.AddRangeAsync(
-            new Employee
-            {
-                Id = Guid.NewGuid(),
-                Name = "John",
-                Email = "john@test.com",
-                DepartmentId = 1,
-                Salary = 50000
-            },
-            new Employee
-            {
-                Id = Guid.NewGuid(),
-                Name = "Alex",
-                Email = "alex@test.com",
-                DepartmentId = 1,
-                Salary = 60000
-            });
-
-        await dbContext.SaveChangesAsync();
-
-        var controller = GetController(dbContext);
+        var controller = new ReportsController(service.Object, Mock.Of<ILogger<ReportsController>>());
 
         var result = await controller.GetDepartmentSummary();
 
-        var okResult =Assert.IsType<OkObjectResult>(result);
-
-        var report =Assert.IsAssignableFrom<IEnumerable<object>>(okResult.Value);
-
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var report = Assert.IsAssignableFrom<IEnumerable<DepartmentSummaryItem>>(okResult.Value);
         var item = report.First();
-
-        Assert.Equal("IT",item.GetType().GetProperty("DepartmentName")!.GetValue(item));
-
-        Assert.Equal(2,item.GetType().GetProperty("EmployeeCount")!.GetValue(item));
-
-        Assert.Equal(55000m,item.GetType().GetProperty("AverageSalary")!.GetValue(item));
-
-        Assert.Equal(50000m,item.GetType().GetProperty("MinSalary")!.GetValue(item));
-
-        Assert.Equal(60000m,item.GetType().GetProperty("MaxSalary")!.GetValue(item));
+        Assert.Equal("IT", item.DepartmentName);
+        Assert.Equal(2, item.EmployeeCount);
+        Assert.Equal(55000m, item.AverageSalary);
+        Assert.Equal(50000m, item.MinSalary);
+        Assert.Equal(60000m, item.MaxSalary);
     }
 
     [Fact]
     public async Task GetProjectSummary_ReturnsProjectSummary()
     {
-        var dbContext = GetDbContext();
+        var service = new Mock<IReportService>();
+        service.Setup(s => s.GetProjectSummaryAsync()).ReturnsAsync([
+            new ProjectSummaryItem("Employee Portal", 2, 60000m, 50000m, 70000m)
+        ]);
 
-        await dbContext.Projects.AddAsync(new Project
-        {
-            Id = 1,
-            ProjectName = "Employee Portal",
-            ProjectMembersCount = 2
-        });
-
-        await dbContext.Employees.AddRangeAsync(
-            new Employee
-            {
-                Id = Guid.NewGuid(),
-                Name = "John",
-                Email = "john@test.com",
-                ProjectId = 1,
-                Salary = 50000
-            },
-            new Employee
-            {
-                Id = Guid.NewGuid(),
-                Name = "Alex",
-                Email = "alex@test.com",
-                ProjectId = 1,
-                Salary = 70000
-            });
-
-        await dbContext.SaveChangesAsync();
-
-        var controller = GetController(dbContext);
+        var controller = new ReportsController(service.Object, Mock.Of<ILogger<ReportsController>>());
 
         var result = await controller.GetProjectSummary();
 
-        var okResult =Assert.IsType<OkObjectResult>(result);
-
-        var report = Assert.IsAssignableFrom<IEnumerable<object>>(okResult.Value);
-
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var report = Assert.IsAssignableFrom<IEnumerable<ProjectSummaryItem>>(okResult.Value);
         var item = report.First();
-
-        Assert.Equal("Employee Portal",item.GetType().GetProperty("ProjectName")!.GetValue(item));
-
-        Assert.Equal(2,item.GetType().GetProperty("ProjectMembersCount")!.GetValue(item));
-
-        Assert.Equal(60000m,item.GetType().GetProperty("AverageSalary")!.GetValue(item));
-
-        Assert.Equal(50000m,item.GetType().GetProperty("MinSalary")!.GetValue(item));
-
-        Assert.Equal(70000m,item.GetType().GetProperty("MaxSalary")!.GetValue(item));
+        Assert.Equal("Employee Portal", item.ProjectName);
+        Assert.Equal(2, item.ProjectMembersCount);
+        Assert.Equal(60000m, item.AverageSalary);
+        Assert.Equal(50000m, item.MinSalary);
+        Assert.Equal(70000m, item.MaxSalary);
     }
 
     [Fact]
     public async Task GetDepartmentSummary_ReturnsZeroForDepartmentWithNoEmployees()
     {
-        var dbContext = GetDbContext();
+        var service = new Mock<IReportService>();
+        service.Setup(s => s.GetDepartmentSummaryAsync()).ReturnsAsync([
+            new DepartmentSummaryItem("Finance", 0, 0m, 0m, 0m)
+        ]);
 
-        await dbContext.Departments.AddAsync(new Department
-        {
-            Id = 1,
-            DepartmentName = "Finance"
-        });
-
-        await dbContext.SaveChangesAsync();
-
-        var controller = GetController(dbContext);
+        var controller = new ReportsController(service.Object, Mock.Of<ILogger<ReportsController>>());
 
         var result = await controller.GetDepartmentSummary();
 
-        var okResult =Assert.IsType<OkObjectResult>(result);
-
-        var report =Assert.IsAssignableFrom<IEnumerable<object>>(okResult.Value);
-
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var report = Assert.IsAssignableFrom<IEnumerable<DepartmentSummaryItem>>(okResult.Value);
         var item = report.First();
-
-        Assert.Equal(0,item.GetType().GetProperty("EmployeeCount")!.GetValue(item));
-
-        Assert.Equal(0m,item.GetType().GetProperty("AverageSalary")!.GetValue(item));
-
-        Assert.Equal(0m,item.GetType().GetProperty("MinSalary")!.GetValue(item));
-
-        Assert.Equal(0m,item.GetType().GetProperty("MaxSalary")!.GetValue(item));
+        Assert.Equal(0, item.EmployeeCount);
+        Assert.Equal(0m, item.AverageSalary);
+        Assert.Equal(0m, item.MinSalary);
+        Assert.Equal(0m, item.MaxSalary);
     }
 }

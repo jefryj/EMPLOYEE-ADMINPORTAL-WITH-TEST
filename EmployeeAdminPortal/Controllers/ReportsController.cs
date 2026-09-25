@@ -1,8 +1,6 @@
-using EmployeeAdminPortal.Data;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using EmployeeAdminPortal.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EmployeeAdminPortal.Controllers
 {
@@ -11,83 +9,27 @@ namespace EmployeeAdminPortal.Controllers
     [Authorize]
     public class ReportsController : ControllerBase
     {
-        private readonly ApplicationDbContext dBcontext;
+        private readonly IReportService reportService;
         private readonly ILogger<ReportsController> logger;
-        private readonly IMemoryCache cache;
 
-        public ReportsController(ApplicationDbContext dBcontext, ILogger<ReportsController> logger, IMemoryCache cache)
+        public ReportsController(IReportService reportService, ILogger<ReportsController> logger)
         {
-            this.dBcontext = dBcontext;
+            this.reportService = reportService;
             this.logger = logger;
-            this.cache = cache;
         }
 
         [HttpGet("department-summary")]
         public async Task<IActionResult> GetDepartmentSummary()
         {
             logger.LogInformation("GetDepartmentSummary endpoint called");
-
-            const string cacheKey = "department-summary";
-
-        if (!cache.TryGetValue(cacheKey, out object? report))
-        {
-            logger.LogInformation("Department Summary CACHE MISS");
-
-            report = await dBcontext.Departments.Select(d => new
-    {
-        d.DepartmentName,
-        EmployeeCount = dBcontext.Employees.Count(e => e.DepartmentId == d.Id),
-
-        AverageSalary = dBcontext.Employees.Where(e => e.DepartmentId == d.Id).Average(e => (decimal?)e.Salary) ?? 0,
-
-        MinSalary = dBcontext.Employees.Where(e => e.DepartmentId == d.Id).Min(e => (decimal?)e.Salary) ?? 0,
-
-        MaxSalary = dBcontext.Employees.Where(e => e.DepartmentId == d.Id).Max(e => (decimal?)e.Salary) ?? 0
-    })
-    .ToListAsync();
-
-            cache.Set(cacheKey, report, TimeSpan.FromMinutes(5));
-        }
-        else
-        {
-            logger.LogInformation("Department Summary CACHE HIT");
-        }
-
-        return Ok(report);
+            return Ok(await reportService.GetDepartmentSummaryAsync());
         }
 
         [HttpGet("project-summary")]
         public async Task<IActionResult> GetProjectSummary()
         {
             logger.LogInformation("GetProjectSummary endpoint called");
-
-            const string cacheKey = "project-summary";
-
-        if (!cache.TryGetValue(cacheKey, out object? report))
-        {
-            logger.LogInformation("Project Summary CACHE MISS");
-
-            report = await dBcontext.Projects.Select(p => new
-            {
-                p.ProjectName,
-                p.ProjectMembersCount,
-                AverageSalary = dBcontext.Employees.Where(e => e.ProjectId == p.Id).Average(e => (decimal?)e.Salary) ?? 0,
-
-                MinSalary = dBcontext.Employees.Where(e => e.ProjectId == p.Id).Min(e => (decimal?)e.Salary) ?? 0,
-
-                MaxSalary = dBcontext.Employees.Where(e => e.ProjectId == p.Id).Max(e => (decimal?)e.Salary) ?? 0
-            }).ToListAsync();
-
-            cache.Set(cacheKey, report, TimeSpan.FromMinutes(5));
-        }
-        else
-        {
-            logger.LogInformation("Project Summary CACHE HIT");
-        }
-
-        return Ok(report);
-
+            return Ok(await reportService.GetProjectSummaryAsync());
         }
     }
-    
 }
