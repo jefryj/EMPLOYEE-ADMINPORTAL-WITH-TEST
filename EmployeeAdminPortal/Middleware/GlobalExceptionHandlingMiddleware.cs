@@ -28,8 +28,8 @@ namespace EmployeeAdminPortal.Middleware
                     throw;
                 }
                 int statusCode;
-                    string title;
-                    switch (ex)
+                string title;
+                switch (ex)
                     {
                     case KeyNotFoundException:
                         statusCode = StatusCodes.Status404NotFound;

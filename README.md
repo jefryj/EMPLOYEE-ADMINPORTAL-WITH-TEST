@@ -20,6 +20,7 @@ Employee Admin Portal is an ASP.NET Core Web API project developed as part of a 
 - Search employees by name or email
 - Filter by department
 - Sorting and pagination
+- Reset Password
 
 ### Department Management
 - Create departments
