@@ -210,6 +210,12 @@ public class EmployeeService(
         employee.PasswordHash = hasher.HashPassword(employee, request.NewPassword);
         employeeRepository.Update(employee);
         await employeeRepository.SaveChangesAsync();
+        await AddAuditLogAsync(
+        employee.Email,
+        "ChangePassword",
+        "Employee",
+        $"Password changed for employee with Id: {employee.Id}"
+    );
 
         return (true, "Password changed successfully.");
     }
